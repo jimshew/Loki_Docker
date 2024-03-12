@@ -169,18 +169,22 @@ class ospf_header(object):
             return "CRYPT"
 
     def render(self, data):
+        with open("/tmp/lokidata", "wb") as binary_file:
+            binary_file.write(data)
         if self.auth_type == self.AUTH_CRYPT:
-            ret = "%s%s%s%s%s" % (  struct.pack("!BBH", self.version, self.type, len(data) + 24),
+            ret = b''.join(  [struct.pack("!BBH", self.version, self.type, len(data) + 24),
                                     self.id,
                                     struct.pack("!LHH", self.area, 0, self.auth_type),
                                     self.auth_data.render(),
-                                    data
+                                    data]
                                     )
             if self.auth_data.type == ospf_crypt_auth_data.TYPE_MD5:
                 hash = hashlib.md5()
             hash.update(ret)
             hash.update(self.auth_data.key)
-            ret = "%s%s" % (ret, hash.digest())
+            ret += hash.digest()
+            with open("/tmp/lokirender", "wb") as binary_file:
+              binary_file.write(ret)
         else:
             ret = "%s%s%s%s" % (struct.pack("!BBH", self.version, self.type, len(data) + 24),
                                 self.id,
@@ -787,6 +791,11 @@ class ospf_thread(threading.Thread):
                                             type=dpkt.ethernet.ETH_TYPE_IP,
                                             data=str(ip_hdr)
                                             )
+                             
+        fileoutput = open('/tmp/lokiunicast.pcap','wb')
+        writer = dpkt.pcap.Writer(fileoutput)
+        writer.writepkt(eth_hdr)
+
         self.parent.dumbnet.send(str(eth_hdr))
 
 
@@ -1522,14 +1531,14 @@ class mod_class(object):
                     hello.parse(data)
                     (ip_int,) = struct.unpack("!I", self.ip)
                     if id not in self.neighbors:
-                        #self.log("OSPF-DEBUG: %d < %d ?" % (hello.id, ip_int))
+                        self.log("OSPF-DEBUG: %d < %d ?" % (hello.id, ip_int))
                         #if socket.ntohl(hello.id) < socket.ntohl(ip_int):
                         if hello.id < ip_int:
                             master = True
-                            #self.log("OSPF-DEBUG: Yes")
+                            self.log("OSPF-DEBUG: Yes")
                         else:
                             master = False
-                            #self.log("OSPF-DEBUG: No")
+                            self.log("OSPF-DEBUG: No")
                         #print "Local %s (%i) - Peer %s (%i) => Master " % (dumbnet.ip_ntoa(self.ip), socket.ntohl(ip_int), id, socket.ntohl(header.id)) + str(master)
                         if self.ui == 'gtk':
                             iter = self.neighbor_liststore.append(None, [dumbnet.ip_ntoa(ip.src), id, str(header.area), "HELLO", header.auth_to_string(), "", master])
@@ -1842,7 +1851,9 @@ class mod_class(object):
                 if len(key) > 16:
                     key = key[:16]
                 elif len(key) < 16:
-                    key = "%s%s" % (key, "\0" * (16 - len(key)))
+                    #key = "%s%s" % (key, "\0" * (16 - len(key)))
+                    key = struct.pack('16s', key.encode('utf-8'))
+
                 self.auth_data = ospf_crypt_auth_data(  key,
                                                         self.id_spinbutton.get_value_as_int(),
                                                         ospf_crypt_auth_data.TYPE_MD5,
