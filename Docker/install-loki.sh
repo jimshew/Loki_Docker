@@ -1,6 +1,7 @@
 #/bin/bash
 
 LOKI_FILE="loki_0.3.1_amd64.deb"
+DPKT_FILE="python-dpkt_1.8.r98-0.1_all.deb"
 
 APT_FLAGS="-q -y --no-install-recommends"
 DEBIAN_FRONTEND=noninteractive
@@ -15,6 +16,9 @@ install_packages \
 
 echo "* Get known-good dpkt"
 wget --quiet --no-check-certificate https://launchpad.net/ubuntu/+source/python-dpkt/1.8.r98-0.1/+build/8368756/+files/python-dpkt_1.8.r98-0.1_all.deb
+echo "* Install dpkt"
+dpkg -i ${DPKT_FILE}
+
 echo "* Get ${LOKI_FILE}"
 wget --quiet --no-check-certificate https://github.com/jimshew/Loki_Docker/raw/master/${LOKI_FILE}
 echo "* Install ${LOKI_FILE}"
