@@ -1,4 +1,4 @@
-# Loki_on_Kali
+# Loki_Docker
 Docker container to run Loki on Linux / Parrot-OS. Loki is a python based infrastructure pentesting tool focussing on layer 3 protocols.
 
 ![Gui of loki](./screenshots/Loki_gui_2023-03-12.png)
