@@ -1,6 +1,6 @@
 FROM bitnami/minideb:buster
 
-LABEL version="1.0" maintainer="Raizo62 <https://github.com/Raizo62>"
+LABEL version="1.0" maintainer="jimshew <https://github.com/jimshew>"
 
 COPY install-loki.sh .
 RUN bash ./install-loki.sh
